@@ -23,6 +23,9 @@
       var next = currentTheme() === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', next);
       try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      document.querySelectorAll('iframe').forEach(function (f) {
+        try { f.contentDocument.documentElement.setAttribute('data-theme', next); } catch (e) {}
+      });
       updateToggleLabel();
     });
     updateToggleLabel();
