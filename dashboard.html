@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple FP&amp;A &mdash; Planning Dashboard</title>
+<meta name="description" content="Interactive HTML mirror of the Apple FP&amp;A Planning Dashboard: Revenue, Operating Performance, Working Capital, Forecast Bridge, Scenario, and Planning Recommendations, computed from Fact_Forecast.">
+<style>
+:root {
+  color-scheme: light;
+  --page-plane: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #ffffff;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --text-success: #006300;
+  --text-critical: #d03b3b;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  --status-good: #0ca30c; --status-warning: #fab219; --status-critical: #d03b3b;
+  --caution-bg: #fdf3e0; --caution-border: #c98a1a; --caution-text: #6b4a06;
+  --accent: var(--series-1);
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(11,11,11,0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page-plane: #0d0d0d;
+    --surface-1: #1a1a19;
+    --surface-2: #202020;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #9a9890;
+    --gridline: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.12);
+    --text-success: #0ca30c;
+    --text-critical: #e66767;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #1fae1f; --series-7: #9085e9; --series-8: #e66767;
+    --status-good: #0ca30c; --status-warning: #fab219; --status-critical: #e0514f;
+    --caution-bg: #2a2410; --caution-border: #c98a1a; --caution-text: #e8c98a;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page-plane: #111111; --surface-1: #181818; --surface-2: #202020;
+  --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #9a9890;
+  --gridline: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.12);
+  --text-success: #0ca30c; --text-critical: #e66767;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #1fae1f; --series-7: #9085e9; --series-8: #e66767;
+  --status-good: #0ca30c; --status-warning: #fab219; --status-critical: #e0514f;
+  --caution-bg: #2a2410; --caution-border: #c98a1a; --caution-text: #e8c98a;
+  --shadow: none;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page-plane: #ffffff; --surface-1: #ffffff; --surface-2: #f7f8fa;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+  --gridline: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --text-success: #006300; --text-critical: #d03b3b;
+  --series-1: #2f5f8f; --series-2: #666666; --series-3: #8c8c8c; --series-4: #bfbfbf;
+  --series-5: #404040; --series-6: #a6a6a6; --series-7: #7f7f7f; --series-8: #595959;
+  --status-good: #0ca30c; --status-warning: #fab219; --status-critical: #d03b3b;
+  --caution-bg: #fdf3e0; --caution-border: #c98a1a; --caution-text: #6b4a06;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--page-plane);
+  color: var(--text-primary);
+  line-height: 1.45;
+  font-size: 15px;
+}
+h1, h2, h3, h4 { margin: 0 0 0.4em 0; text-wrap: balance; }
+p { margin: 0 0 0.6em 0; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+.app { display: flex; min-height: 100vh; }
+
+/* ---- Sidebar / nav ---- */
+.sidebar {
+  flex: 0 0 240px;
+  background: var(--surface-1);
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.brand { font-weight: 700; font-size: 1.02rem; margin-bottom: 2px; }
+.brand-sub { color: var(--text-muted); font-size: 0.72rem; margin-bottom: 18px; }
+.nav-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.nav-btn {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  background: none; border: none; color: var(--text-secondary);
+  font: inherit; font-size: 0.86rem; padding: 9px 10px; border-radius: 8px; cursor: pointer;
+}
+.nav-btn .nav-idx { color: var(--text-muted); font-size: 0.72rem; width: 1.4em; flex: none; }
+.nav-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+.nav-btn[aria-current="page"] { background: var(--surface-2); color: var(--text-primary); font-weight: 600; border-left: 3px solid var(--accent); }
+.nav-btn[aria-current="page"] .nav-idx { color: var(--accent); }
+.sidebar-foot { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
+.theme-toggle {
+  display: flex; align-items: center; gap: 6px; width: 100%; justify-content: center;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary);
+  font: inherit; font-size: 0.78rem; padding: 7px 8px; border-radius: 8px; cursor: pointer;
+}
+.theme-toggle:hover { color: var(--text-primary); }
+.generated-note { color: var(--text-muted); font-size: 0.68rem; margin-top: 10px; text-align: center; }
+
+/* ---- Main content ---- */
+.content { flex: 1 1 auto; min-width: 0; padding: 26px 34px 60px; max-width: 1160px; }
+.topbar { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.page-eyebrow { color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+.page-title { font-size: 1.5rem; font-weight: 700; }
+.page-subtitle { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
+
+.page { display: none; }
+.page.active { display: block; animation: fade .15s ease-out; }
+@media (prefers-reduced-motion: reduce) { .page.active { animation: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- Layout helpers ---- */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-bottom: 18px; }
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; margin-bottom: 18px; }
+.col-stack { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+}
+.subsection { margin-bottom: 22px; }
+.block-title { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+.block-sub { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 12px; }
+
+/* ---- Cards ---- */
+.card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 16px 18px; margin-bottom: 0; min-width: 0;
+}
+.chart-title { font-size: 0.88rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
+.chart-wrap { overflow-x: auto; }
+.chart-svg { width: 100%; height: auto; display: block; }
+.chart-caption { color: var(--text-muted); font-size: 0.72rem; margin-top: 8px; margin-bottom: 0; }
+.chart-sub { color: var(--text-muted); font-size: 0.72rem; margin: 6px 0 0; }
+
+/* ---- KPI tiles ---- */
+.tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+#page-summary .tile-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 760px) { .tile-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) { #page-summary .tile-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .tile-grid { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { #page-summary .tile-grid { grid-template-columns: 1fr; } }
+.tile {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 14px 16px;
+}
+.tile-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+.tile-label { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; }
+.tile-value { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile-delta { font-size: 0.86rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tile-sub { color: var(--text-muted); font-size: 0.72rem; margin-top: 6px; }
+
+/* ---- Status chip ---- */
+.cell-value { margin-right: 8px; font-variant-numeric: tabular-nums; }
+.status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; color: var(--text-secondary); white-space: nowrap; }
+.chip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.status-chip.status-good .chip-dot { background: var(--status-good); }
+.status-chip.status-warning .chip-dot { background: var(--status-warning); }
+.status-chip.status-critical .chip-dot { background: var(--status-critical); }
+.status-chip.chip-sm { font-size: 0.64rem; }
+
+/* ---- Tables ---- */
+.table-scroll { overflow-x: auto; }
+.data-table { border-collapse: collapse; width: 100%; font-size: 0.8rem; min-width: 480px; }
+.data-table th {
+  text-align: left; color: var(--text-muted); font-weight: 700; font-size: 0.68rem; text-transform: uppercase;
+  letter-spacing: 0.03em; padding: 6px 8px; border-bottom: 1px solid var(--gridline);
+}
+.data-table td { padding: 7px 8px; border-bottom: 1px solid var(--gridline); font-variant-numeric: tabular-nums; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.rec-table { min-width: 760px; }
+.rec-table td { font-variant-numeric: normal; vertical-align: top; font-size: 0.76rem; }
+.rec-table .rec-critical { color: var(--text-critical); }
+.rec-row-flag td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+
+/* ---- Bullet / callout lists ---- */
+.bullet-list, .callout-list { margin: 0; padding-left: 1.1em; font-size: 0.82rem; color: var(--text-secondary); }
+.bullet-list li, .callout-list li { margin-bottom: 6px; }
+.callout-list { list-style: none; padding-left: 0; font-size: 0.78rem; }
+
+/* ---- Stacked 100% bar / driver rows ---- */
+.stacked100 { margin-top: 4px; }
+.stack-track { display: flex; gap: 2px; height: 20px; border-radius: 4px; overflow: hidden; }
+.seg { min-width: 2px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; font-size: 0.72rem; color: var(--text-secondary); }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+.driver-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.driver-row { display: grid; grid-template-columns: 70px 1fr 64px; align-items: center; gap: 8px; }
+.driver-label { font-size: 0.76rem; font-weight: 700; }
+.driver-track { display: flex; gap: 2px; height: 14px; border-radius: 3px; overflow: hidden; background: var(--gridline); }
+.driver-total { text-align: right; font-size: 0.76rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.val-good { color: var(--text-success); }
+.val-bad { color: var(--text-critical); }
+
+/* ---- Chart SVG marks ---- */
+.gridline { stroke: var(--gridline); stroke-width: 1; }
+.baseline-line { stroke: var(--baseline); stroke-width: 1; }
+.connector { stroke: var(--gridline); stroke-width: 1; stroke-dasharray: 2 2; }
+.tick-label, .axis-label { fill: var(--text-muted); font-size: 9px; }
+.bar-value { fill: var(--text-primary); font-size: 9.5px; font-weight: 700; }
+.end-label { fill: var(--text-primary); font-size: 11px; font-weight: 700; }
+.line-series-1 { fill: none; stroke: var(--series-1); stroke-width: 2.2; stroke-linecap: round; }
+.line-forecast { fill: none; stroke: var(--text-muted); stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 4 3; }
+.mark-series-1 { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
+.mark-forecast { fill: var(--text-muted); stroke: var(--surface-1); stroke-width: 2; }
+.fill-baseline { fill: var(--baseline); }
+.fill-series-1 { fill: var(--series-1); }
+
+/* ---- Caution box ---- */
+.caution {
+  background: var(--caution-bg); border: 1px solid var(--caution-border); border-radius: var(--radius);
+  padding: 12px 16px; margin: 14px 0; font-size: 0.78rem;
+}
+.caution-title { font-weight: 700; color: var(--text-primary); margin-bottom: 4px; font-size: 0.8rem; }
+.caution-text { color: var(--text-secondary); margin: 0; }
+
+/* ---- Misc ---- */
+.finding { }
+.finding-title { color: var(--text-critical); font-weight: 800; font-size: 0.8rem; letter-spacing: 0.03em; margin-bottom: 6px; }
+.finding p { font-size: 0.82rem; color: var(--text-secondary); margin: 0; }
+
+/* ---- Recommendation block (page 1) ---- */
+.rec-item { font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 7px; }
+.rec-item strong { color: var(--text-primary); }
+.takeaway {
+  margin-top: 10px; padding: 10px 14px; border-radius: var(--radius);
+  background: var(--surface-1);
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  font-weight: 700; font-size: 0.86rem; color: var(--text-primary);
+}
+/* Executive Headline band (page 1, Task 3, exec-summary-storytelling SDD):
+   reuses .takeaway's tinted/bordered treatment (same --accent-based tokens,
+   no new hardcoded colors) but sits above the tile grid instead of inside
+   the Recommendation card, so it needs its own top/bottom spacing and a
+   touch more size to read as the page's lead callout. */
+.headline-band { margin-top: 0; margin-bottom: 16px; font-size: 0.92rem; border-left: 3px solid var(--accent); }
+/* Owner/Confidence tag line under a KPI tile's sub-caption (Task 3): reuses
+   .tile-sub's small/muted styling, just stacked below it with a hairline
+   gap -- no new color tokens. */
+.tile-tag { margin-top: 3px; }
+.ccc-line { font-weight: 700; font-size: 0.9rem; }
+.footnote { color: var(--text-muted); font-size: 0.72rem; margin-top: 14px; }
+.body-text { font-size: 0.8rem; color: var(--text-secondary); }
+.scenario-table td:nth-child(2), .scenario-table td:nth-child(3), .scenario-table td:nth-child(4) { font-weight: 600; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- Mobile: sidebar becomes a horizontal scrollable tab bar ---- */
+@media (max-width: 860px) {
+  .app { flex-direction: column; }
+  .sidebar {
+    position: sticky; top: 0; height: auto; width: 100%; flex: none;
+    border-right: none; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; z-index: 5;
+  }
+  .brand-block { flex: none; margin-right: 4px; }
+  .brand-sub { display: none; }
+  .nav-list { flex-direction: row; overflow-x: auto; flex: 1 1 auto; gap: 4px; padding-bottom: 2px; }
+  .nav-btn { white-space: nowrap; }
+  .sidebar-foot { margin-top: 0; padding-top: 0; border-top: none; flex: none; display: flex; align-items: center; }
+  .theme-toggle { width: auto; padding: 7px 10px; }
+  .generated-note { display: none; }
+  .content { padding: 18px 16px 40px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="brand">Apple FP&amp;A</div>
+      <div class="brand-sub">Planning Dashboard &mdash; Interactive HTML</div>
+    </div>
+    <nav aria-label="Dashboard pages">
+      <ul class="nav-list"><li><button class="nav-btn" data-page="summary" type="button"><span class="nav-idx">01</span><span class="nav-label">Current View</span></button></li><li><button class="nav-btn" data-page="revenue" type="button"><span class="nav-idx">02</span><span class="nav-label">Revenue</span></button></li><li><button class="nav-btn" data-page="operating" type="button"><span class="nav-idx">03</span><span class="nav-label">Operating Performance</span></button></li><li><button class="nav-btn" data-page="workingcapital" type="button"><span class="nav-idx">04</span><span class="nav-label">Working Capital</span></button></li><li><button class="nav-btn" data-page="bridge" type="button"><span class="nav-idx">05</span><span class="nav-label">Forecast Bridge</span></button></li><li><button class="nav-btn" data-page="scenario" type="button"><span class="nav-idx">06</span><span class="nav-label">Scenario</span></button></li><li><button class="nav-btn" data-page="recommendation" type="button"><span class="nav-idx">07</span><span class="nav-label">Planning Recommendations</span></button></li><li><button class="nav-btn" data-page="appendix" type="button"><span class="nav-idx">08</span><span class="nav-label">Appendix</span></button></li></ul>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="theme-toggle" id="theme-toggle" type="button">Dark mode</button>
+      <div class="generated-note">Prepared by: Mengru Shi<br>Status: Portfolio case study<br>Last updated: August 2026<br><br>Independent case study using public information. Not an internal Apple document.<br><br>Source: public-data forecast model<br>Generated 2026-08-05</div>
+    </div>
+  </aside>
+  <main class="content">
+    
+        <section class="page" id="page-summary" aria-labelledby="h-summary">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-summary">Current View</h1>
+            <p class="page-subtitle">FY26 Q2 Actual vs. most recent prior forecast vintage (Q1 Forecast Update, per the model&#x27;s rolling forecast-bridge cadence)</p>
+          </div>
+          
+    <div class="takeaway headline-band">FY26 Q2 revenue exceeded forecast by 6.9%, but operating margin compressed 271 bps as SG&amp;A (+37.9%) and R&amp;D (+45.0%) grew faster than plan. Planning focus: fund AI-enabled feature rollout and subscription growth while protecting gross margin and capital return flexibility.</div>
+    <div class="tile-grid"><div class="tile">
+      <div class="tile-head"><span class="tile-label">Revenue</span></div>
+      <div class="tile-value">$111.2B</div>
+      <div class="tile-delta">+6.9%</div>
+      <div class="tile-sub">vs Q1 FC Update $104.0B (FY26 Q2)</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">Gross Margin</span></div>
+      <div class="tile-value">49.3%</div>
+      <div class="tile-delta">+150 bps</div>
+      <div class="tile-sub">vs Q1 FC Update 47.8% | Op Margin 32.3%</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">Cash</span></div>
+      <div class="tile-value">$45.6B</div>
+      <div class="tile-delta">+39.5%</div>
+      <div class="tile-sub">vs Q1 FC Update $32.7B; floor $0; see Appendix — Limitation #2</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">Forecast</span></div>
+      <div class="tile-value">7.5%</div>
+      <div class="tile-delta">bias +7.5%</div>
+      <div class="tile-sub">Revenue MAPE: Q1 vs AOP; Q2 vs Q1 FC Update</div>
+    </div></div>
+    <div class="card"><h3 class="block-title">Planning Recommendation</h3><p class="rec-item"><strong>Recommendation:</strong> Recommend maintaining the current capital-return pace through Q3 while prioritizing AI investment within existing funding capacity.</p><p class="rec-item"><strong>Why:</strong> Revenue beat forecast by $7,172M, but operating margin compressed 271 bps. The plan should fund growth without hiding margin pressure.</p><p class="rec-item"><strong>Business Partner Questions:</strong> Commercial: is subscription attachment structurally higher? Sales: is premium feature adoption shifting upgrade timing? Operations: which AI costs can be phased?</p><div class="takeaway">Next step: Update FY27 AOP drivers for subscription attachment, premium feature adoption, and AI infrastructure phasing.</div></div>
+    
+        </section>
+        <section class="page" id="page-revenue" aria-labelledby="h-revenue">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-revenue">Revenue</h1>
+            <p class="page-subtitle">Total-company trend (FY24 Q1 – FY26 Q2 Actuals) and FY26 Q1/Q2 segment mix, actual vs. forecast, and driver contribution</p>
+          </div>
+          
+    <div class="two-col">
+      <div class="col-stack"><div class="card"><h4 class="chart-title">Total Revenue — FY24 Q1 through FY26 Q2 (Actual)</h4><div class="chart-wrap"><svg viewBox="0 0 640 220" class="chart-svg" style="min-width:440px" role="img" aria-label="Total Revenue — FY24 Q1 through FY26 Q2 (Actual)"><line x1="48" y1="198.0" x2="626" y2="198.0" class="gridline"/><text x="42" y="201.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="151.5" x2="626" y2="151.5" class="gridline"/><text x="42" y="154.5" class="tick-label" text-anchor="end">40B</text><line x1="48" y1="105.0" x2="626" y2="105.0" class="gridline"/><text x="42" y="108.0" class="tick-label" text-anchor="end">81B</text><line x1="48" y1="58.5" x2="626" y2="58.5" class="gridline"/><text x="42" y="61.5" class="tick-label" text-anchor="end">121B</text><line x1="48" y1="12.0" x2="626" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">161B</text><path d="M 48.0 59.9 L 112.2 93.2 L 176.4 98.9 L 240.7 88.3 L 304.9 54.4 L 369.1 87.8 L 433.3 89.4 L 497.6 79.6 L 561.8 31.9 L 626.0 69.6" class="line-series-1"/><circle cx="48.0" cy="59.9" r="3.6" class="mark-series-1"><title>FY24 Q1: $119.6B</title></circle><circle cx="112.2" cy="93.2" r="3.6" class="mark-series-1"><title>FY24 Q2: $90.8B</title></circle><circle cx="176.4" cy="98.9" r="3.6" class="mark-series-1"><title>FY24 Q3: $85.8B</title></circle><circle cx="240.7" cy="88.3" r="3.6" class="mark-series-1"><title>FY24 Q4: $94.9B</title></circle><circle cx="304.9" cy="54.4" r="3.6" class="mark-series-1"><title>FY25 Q1: $124.3B</title></circle><circle cx="369.1" cy="87.8" r="3.6" class="mark-series-1"><title>FY25 Q2: $95.4B</title></circle><circle cx="433.3" cy="89.4" r="3.6" class="mark-series-1"><title>FY25 Q3: $94.0B</title></circle><circle cx="497.6" cy="79.6" r="3.6" class="mark-series-1"><title>FY25 Q4: $102.5B</title></circle><circle cx="561.8" cy="31.9" r="3.6" class="mark-series-1"><title>FY26 Q1: $143.8B</title></circle><circle cx="626.0" cy="69.6" r="3.6" class="mark-series-1"><title>FY26 Q2: $111.2B</title></circle><text x="620.0" y="62.6" class="end-label" text-anchor="end">$111.2B</text><text x="48.0" y="216" class="axis-label" text-anchor="middle">FY24 Q1</text><text x="112.2" y="216" class="axis-label" text-anchor="middle">FY24 Q2</text><text x="176.4" y="216" class="axis-label" text-anchor="middle">FY24 Q3</text><text x="240.7" y="216" class="axis-label" text-anchor="middle">FY24 Q4</text><text x="304.9" y="216" class="axis-label" text-anchor="middle">FY25 Q1</text><text x="369.1" y="216" class="axis-label" text-anchor="middle">FY25 Q2</text><text x="433.3" y="216" class="axis-label" text-anchor="middle">FY25 Q3</text><text x="497.6" y="216" class="axis-label" text-anchor="middle">FY25 Q4</text><text x="561.8" y="216" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="626.0" y="216" class="axis-label" text-anchor="middle">FY26 Q2</text><line x1="48" y1="198.0" x2="626" y2="198.0" class="baseline-line"/></svg></div><ul class="callout-list"><li>FY26 Q1 YoY: +15.7% vs FY25 Q1 ($124.3B)</li><li>FY26 Q2 QoQ: -22.7% vs FY26 Q1 ($143.8B) — Apple&#x27;s holiday-quarter seasonality</li></ul></div><div class="card"><h4 class="chart-title">Total Revenue — Actual vs. Forecast</h4><div class="chart-wrap"><svg viewBox="0 0 420 210" class="chart-svg" style="min-width:340px" role="img" aria-label="Total Revenue — Actual vs. Forecast"><line x1="10" y1="176" x2="410" y2="176" class="baseline-line"/><rect x="59.0" y="66.4" width="48.0" height="109.6" rx="3" class="fill-baseline"><title>Forecast: $133.1B</title></rect><text x="83.0" y="61.4" class="bar-value" text-anchor="middle">$133.1B</text><rect x="113.0" y="57.6" width="48.0" height="118.4" rx="3" class="fill-series-1"><title>Actual: $143.8B</title></rect><text x="137.0" y="52.6" class="bar-value" text-anchor="middle">$143.8B</text><text x="110.0" y="204.0" class="axis-label" text-anchor="middle">Q1 vs AOP</text><rect x="259.0" y="90.3" width="48.0" height="85.7" rx="3" class="fill-baseline"><title>Forecast: $104.0B</title></rect><text x="283.0" y="85.3" class="bar-value" text-anchor="middle">$104.0B</text><rect x="313.0" y="84.4" width="48.0" height="91.6" rx="3" class="fill-series-1"><title>Actual: $111.2B</title></rect><text x="337.0" y="79.4" class="bar-value" text-anchor="middle">$111.2B</text><text x="310.0" y="204.0" class="axis-label" text-anchor="middle">Q2 vs Q1 FCU</text></svg></div></div></div>
+      <div class="col-stack"><div class="card"><h4 class="chart-title">FY26 Q2 Revenue Mix (implied Actual, by segment)</h4><div class="chart-wrap"><div class="stacked100"><div class="stack-track"><div class="seg" style="flex:54784.643112 0 0%; background:var(--series-1)" title="iPhone: iPhone 49.3%"></div><div class="seg" style="flex:9028.110168 0 0%; background:var(--series-2)" title="Mac: Mac 8.1%"></div><div class="seg" style="flex:7253.245822 0 0%; background:var(--series-3)" title="iPad: iPad 6.5%"></div><div class="seg" style="flex:9009.170233 0 0%; background:var(--series-4)" title="Wearables: Wearables 8.1%"></div><div class="seg" style="flex:31108.830665 0 0%; background:var(--series-5)" title="Services: Services 28.0%"></div></div><div class="legend-row"><span class="legend-item"><i class="swatch" style="background:var(--series-1)"></i>iPhone 49.3%</span><span class="legend-item"><i class="swatch" style="background:var(--series-2)"></i>Mac 8.1%</span><span class="legend-item"><i class="swatch" style="background:var(--series-3)"></i>iPad 6.5%</span><span class="legend-item"><i class="swatch" style="background:var(--series-4)"></i>Wearables 8.1%</span><span class="legend-item"><i class="swatch" style="background:var(--series-5)"></i>Services 28.0%</span></div></div></div></div><div class="card"><h4 class="chart-title">FY26 Q2 Segment — Implied Actual vs. Forecast (Q1 FC Update)</h4><div class="table-scroll"><table class="data-table "><thead><tr><th>Segment</th><th>Implied Actual</th><th>Forecast</th><th>Var %</th><th>Status</th></tr></thead><tbody><tr><td>iPhone</td><td>$54,785M</td><td>$51,251M</td><td>+6.9%</td><td><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Mac</td><td>$9,028M</td><td>$8,446M</td><td>+6.9%</td><td><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>iPad</td><td>$7,253M</td><td>$6,785M</td><td>+6.9%</td><td><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Wearables</td><td>$9,009M</td><td>$8,428M</td><td>+6.9%</td><td><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Services</td><td>$31,109M</td><td>$29,102M</td><td>+6.9%</td><td><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr></tbody></table></div><p class="chart-caption">All 5 segments show an identical +6.9% variance this period: each segment&#x27;s Implied Actual is reconstructed from a stored Variance $ row that is Phase 3&#x27;s own PROPORTIONAL allocation of the total-company revenue beat across segments (weighted by each segment&#x27;s own forecast size), not an independently observed per-segment actual-vs-forecast beat or miss — see the Power BI Build Guide §3.2 for the full method.</p></div><div class="card"><h4 class="chart-title">FY26 Q2 Revenue Variance $ Driver Contribution (Actual vs. Q1 FC Update)</h4><div class="driver-stack"><div class="driver-row"><div class="driver-label">iPhone</div><div class="driver-track"><div class="seg" style="flex:0.428571 0 0%; background:var(--series-1)" title="Units: 1,515M"></div><div class="seg" style="flex:0.571429 0 0%; background:var(--series-2)" title="ASP: 2,019M"></div></div><div class="driver-total val-good">+3,534M</div></div><div class="driver-row"><div class="driver-label">Mac</div><div class="driver-track"><div class="seg" style="flex:0.666667 0 0%; background:var(--series-1)" title="Units: 388M"></div><div class="seg" style="flex:0.333333 0 0%; background:var(--series-2)" title="ASP: 194M"></div></div><div class="driver-total val-good">+582M</div></div><div class="driver-row"><div class="driver-label">iPad</div><div class="driver-track"><div class="seg" style="flex:0.400000 0 0%; background:var(--series-1)" title="Units: 187M"></div><div class="seg" style="flex:0.600000 0 0%; background:var(--series-2)" title="ASP: 281M"></div></div><div class="driver-total val-good">+468M</div></div><div class="driver-row"><div class="driver-label">Wearables</div><div class="driver-track"><div class="seg" style="flex:0.500000 0 0%; background:var(--series-1)" title="Units: 291M"></div><div class="seg" style="flex:0.500000 0 0%; background:var(--series-2)" title="ASP: 291M"></div></div><div class="driver-total val-good">+581M</div></div><div class="driver-row"><div class="driver-label">Services</div><div class="driver-track"><div class="seg" style="flex:0.600000 0 0%; background:var(--series-1)" title="Units: 1,204M"></div><div class="seg" style="flex:0.400000 0 0%; background:var(--series-2)" title="ASP: 803M"></div></div><div class="driver-total val-good">+2,007M</div></div></div><div class="legend-row"><span class="legend-item"><i class="swatch" style="background:var(--series-1)"></i>Units</span><span class="legend-item"><i class="swatch" style="background:var(--series-2)"></i>ASP</span><span class="legend-item"><i class="swatch" style="background:var(--series-3)"></i>FX</span><span class="legend-item"><i class="swatch" style="background:var(--series-4)"></i>Mix</span></div><p class="chart-caption">FX and Mix are $0 for every segment this period because the Base scenario&#x27;s own FX/Mix assumptions are 0% (a mechanical consequence of the scenario, not a bridge-method choice) — shown in the legend, not hidden.</p></div></div>
+    </div>
+    
+        </section>
+        <section class="page" id="page-operating" aria-labelledby="h-operating">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-operating">Operating Performance</h1>
+            <p class="page-subtitle">FY26 Q2 Actual vs. most recent prior forecast vintage (Q1 Forecast Update); Gross Margin $ − SG&amp;A $ − R&amp;D $ = Operating Income, verified against Fact_Forecast</p>
+          </div>
+          
+    <div class="caution"><div class="caution-title">Data gap — Products/Services Gross Margin split</div><p class="caution-text">Gross Margin below is TOTAL-COMPANY only. Products Gross Margin % (Drivers tab Active ≈ 37.0%) and Services Gross Margin % (≈ 75.5%) are scenario-driver inputs on the Phase 3 model&#x27;s Drivers tab (03 Driver-Based Rolling Forecast Model.xlsx, rows 33–34) but were never extracted into Fact_Forecast — no Products/Services Gross Margin split exists in this data model, so none is shown as a dashboard figure here.</p></div>
+    <div class="tile-grid"><div class="tile">
+      <div class="tile-head"><span class="tile-label">Gross Margin %</span><span class="status-chip status-good"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></div>
+      <div class="tile-value">49.3%</div>
+      <div class="tile-delta">+150 bps</div>
+      <div class="tile-sub">vs Q1 FC Update 47.8% (total company)</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">Operating Margin %</span><span class="status-chip status-critical"><i class="chip-dot" aria-hidden="true"></i>RED</span></div>
+      <div class="tile-value">32.3%</div>
+      <div class="tile-delta">-271 bps</div>
+      <div class="tile-sub">vs Q1 FC Update 35.0%</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">SG&amp;A $ (Opex)</span><span class="status-chip status-critical"><i class="chip-dot" aria-hidden="true"></i>RED</span></div>
+      <div class="tile-value">$7.5B</div>
+      <div class="tile-delta">+37.9%</div>
+      <div class="tile-sub">vs Q1 FC Update $5.4B; lower is better</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">R&amp;D $ (Opex)</span><span class="status-chip status-critical"><i class="chip-dot" aria-hidden="true"></i>RED</span></div>
+      <div class="tile-value">$11.4B</div>
+      <div class="tile-delta">+45.0%</div>
+      <div class="tile-sub">vs Q1 FC Update $7.9B; lower is better</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">Operating Income</span><span class="status-chip status-warning"><i class="chip-dot" aria-hidden="true"></i>YELLOW</span></div>
+      <div class="tile-value">$35.9B</div>
+      <div class="tile-delta">-1.4%</div>
+      <div class="tile-sub">vs Q1 FC Update $36.4B</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">EPS</span><span class="status-chip status-warning"><i class="chip-dot" aria-hidden="true"></i>YELLOW</span></div>
+      <div class="tile-value">$2.01</div>
+      <div class="tile-delta">-1.8%</div>
+      <div class="tile-sub">vs Q1 FC Update $2.05</div>
+    </div></div>
+    <div class="two-col">
+      <div class="col-stack"><div class="card"><h4 class="chart-title">Operating Income — FY24 Q1 through FY26 Q2 (Actual)</h4><div class="chart-wrap"><svg viewBox="0 0 640 220" class="chart-svg" style="min-width:440px" role="img" aria-label="Operating Income — FY24 Q1 through FY26 Q2 (Actual)"><line x1="48" y1="198.0" x2="626" y2="198.0" class="gridline"/><text x="42" y="201.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="151.5" x2="626" y2="151.5" class="gridline"/><text x="42" y="154.5" class="tick-label" text-anchor="end">14B</text><line x1="48" y1="105.0" x2="626" y2="105.0" class="gridline"/><text x="42" y="108.0" class="tick-label" text-anchor="end">28B</text><line x1="48" y1="58.5" x2="626" y2="58.5" class="gridline"/><text x="42" y="61.5" class="tick-label" text-anchor="end">43B</text><line x1="48" y1="12.0" x2="626" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">57B</text><path d="M 48.0 66.2 L 112.2 106.9 L 176.4 115.2 L 240.7 101.4 L 304.9 58.1 L 369.1 101.4 L 433.3 105.9 L 497.6 92.1 L 561.8 31.9 L 626.0 80.8" class="line-series-1"/><circle cx="48.0" cy="66.2" r="3.6" class="mark-series-1"><title>FY24 Q1: $40.4B</title></circle><circle cx="112.2" cy="106.9" r="3.6" class="mark-series-1"><title>FY24 Q2: $27.9B</title></circle><circle cx="176.4" cy="115.2" r="3.6" class="mark-series-1"><title>FY24 Q3: $25.4B</title></circle><circle cx="240.7" cy="101.4" r="3.6" class="mark-series-1"><title>FY24 Q4: $29.6B</title></circle><circle cx="304.9" cy="58.1" r="3.6" class="mark-series-1"><title>FY25 Q1: $42.8B</title></circle><circle cx="369.1" cy="101.4" r="3.6" class="mark-series-1"><title>FY25 Q2: $29.6B</title></circle><circle cx="433.3" cy="105.9" r="3.6" class="mark-series-1"><title>FY25 Q3: $28.2B</title></circle><circle cx="497.6" cy="92.1" r="3.6" class="mark-series-1"><title>FY25 Q4: $32.4B</title></circle><circle cx="561.8" cy="31.9" r="3.6" class="mark-series-1"><title>FY26 Q1: $50.9B</title></circle><circle cx="626.0" cy="80.8" r="3.6" class="mark-series-1"><title>FY26 Q2: $35.9B</title></circle><text x="620.0" y="73.8" class="end-label" text-anchor="end">$35.9B</text><text x="48.0" y="216" class="axis-label" text-anchor="middle">FY24 Q1</text><text x="112.2" y="216" class="axis-label" text-anchor="middle">FY24 Q2</text><text x="176.4" y="216" class="axis-label" text-anchor="middle">FY24 Q3</text><text x="240.7" y="216" class="axis-label" text-anchor="middle">FY24 Q4</text><text x="304.9" y="216" class="axis-label" text-anchor="middle">FY25 Q1</text><text x="369.1" y="216" class="axis-label" text-anchor="middle">FY25 Q2</text><text x="433.3" y="216" class="axis-label" text-anchor="middle">FY25 Q3</text><text x="497.6" y="216" class="axis-label" text-anchor="middle">FY25 Q4</text><text x="561.8" y="216" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="626.0" y="216" class="axis-label" text-anchor="middle">FY26 Q2</text><line x1="48" y1="198.0" x2="626" y2="198.0" class="baseline-line"/></svg></div><ul class="callout-list"><li>FY26 Q2 QoQ: -29.4% vs FY26 Q1 ($50.9B) — Operating Income</li><li>Actual vs. Forecast: Q1 +16.2% vs AOP (GREEN) | Q2 -1.4% vs Q1 FCU (YELLOW)</li></ul></div></div>
+      <div class="col-stack"><div class="card"><h4 class="chart-title">FY26 Q1 Opex Mix (Actual) — SG&amp;A + R&amp;D = $18,379M</h4><div class="stacked100"><div class="stack-track"><div class="seg" style="flex:7492.000000 0 0%; background:var(--series-1)" title="SG&amp;A: SG&amp;A 40.8%"></div><div class="seg" style="flex:10887.000000 0 0%; background:var(--series-2)" title="R&amp;D: R&amp;D 59.2%"></div></div><div class="legend-row"><span class="legend-item"><i class="swatch" style="background:var(--series-1)"></i>SG&amp;A 40.8%</span><span class="legend-item"><i class="swatch" style="background:var(--series-2)"></i>R&amp;D 59.2%</span></div></div></div><div class="card"><h4 class="chart-title">FY26 Q2 Opex Mix (Actual) — SG&amp;A + R&amp;D = $18,896M</h4><div class="stacked100"><div class="stack-track"><div class="seg" style="flex:7477.000000 0 0%; background:var(--series-1)" title="SG&amp;A: SG&amp;A 39.6%"></div><div class="seg" style="flex:11419.000000 0 0%; background:var(--series-2)" title="R&amp;D: R&amp;D 60.4%"></div></div><div class="legend-row"><span class="legend-item"><i class="swatch" style="background:var(--series-1)"></i>SG&amp;A 39.6%</span><span class="legend-item"><i class="swatch" style="background:var(--series-2)"></i>R&amp;D 60.4%</span></div></div></div><div class="card"><h4 class="chart-title">FY26 Q2 Operating P&amp;L — Actual vs. Forecast (Q1 FC Update)</h4><div class="table-scroll"><table class="data-table "><thead><tr><th>Line Item</th><th>Actual</th><th>Forecast</th><th>Var %</th><th>Status</th></tr></thead><tbody><tr><td>Gross Margin $</td><td>$54,781M</td><td>$49,689M</td><td>+10.2%</td><td><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>SG&amp;A $</td><td>$7,477M</td><td>$5,421M</td><td>+37.9%</td><td><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td></tr><tr><td>R&amp;D $</td><td>$11,419M</td><td>$7,877M</td><td>+45.0%</td><td><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td></tr><tr><td>Operating Income</td><td>$35,885M</td><td>$36,391M</td><td>-1.4%</td><td><span class="status-chip status-warning chip-sm"><i class="chip-dot" aria-hidden="true"></i>YELLOW</span></td></tr><tr><td>EPS</td><td>$2.01</td><td>$2.05</td><td>-1.8%</td><td><span class="status-chip status-warning chip-sm"><i class="chip-dot" aria-hidden="true"></i>YELLOW</span></td></tr></tbody></table></div><p class="chart-caption">Reconciles exactly: Gross Margin $ − SG&amp;A $ − R&amp;D $ = Operating Income for both the Actual and Forecast column above (asserted at build time, not just quoted).</p></div></div>
+    </div>
+    
+        </section>
+        <section class="page" id="page-workingcapital" aria-labelledby="h-workingcapital">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-workingcapital">Working Capital</h1>
+            <p class="page-subtitle">AR / Inventory / AP (Actual trend) and DSO / DIO / DPO (forecast-only, annual-calibrated — see caveat below)</p>
+          </div>
+          
+    <div class="tile-grid"><div class="tile">
+      <div class="tile-head"><span class="tile-label">AR $</span><span class="status-chip status-good"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></div>
+      <div class="tile-value">$30.3B</div>
+      <div class="tile-delta">-20.4%</div>
+      <div class="tile-sub">vs Q1 FC Update $38.1B; lower is better</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">Inventory $</span><span class="status-chip status-critical"><i class="chip-dot" aria-hidden="true"></i>RED</span></div>
+      <div class="tile-value">$6.7B</div>
+      <div class="tile-delta">+11.8%</div>
+      <div class="tile-sub">vs Q1 FC Update $6.0B; lower is better</div>
+    </div><div class="tile">
+      <div class="tile-head"><span class="tile-label">AP $</span><span class="status-chip status-critical"><i class="chip-dot" aria-hidden="true"></i>RED</span></div>
+      <div class="tile-value">$57.3B</div>
+      <div class="tile-delta">-17.4%</div>
+      <div class="tile-sub">vs Q1 FC Update $69.4B; higher is better</div>
+    </div></div>
+    <div class="card"><p class="ccc-line">Cash Conversion Cycle = DSO + DIO − DPO = 33 + 10 − 115 = -72 days</p><p class="chart-caption">(negative = suppliers fund the cycle; same forecast-only/calibration caveat applies — see below)</p></div>
+    <div class="two-col">
+      <div class="col-stack"><div class="card"><h4 class="chart-title">AR $ — FY24 Q1 through FY26 Q2 (Actual)</h4><div class="chart-wrap"><svg viewBox="0 0 560 190" class="chart-svg" style="min-width:400px" role="img" aria-label="AR $ — FY24 Q1 through FY26 Q2 (Actual)"><line x1="48" y1="168.0" x2="546" y2="168.0" class="gridline"/><text x="42" y="171.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="129.0" x2="546" y2="129.0" class="gridline"/><text x="42" y="132.0" class="tick-label" text-anchor="end">11B</text><line x1="48" y1="90.0" x2="546" y2="90.0" class="gridline"/><text x="42" y="93.0" class="tick-label" text-anchor="end">22B</text><line x1="48" y1="51.0" x2="546" y2="51.0" class="gridline"/><text x="42" y="54.0" class="tick-label" text-anchor="end">34B</text><line x1="48" y1="12.0" x2="546" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">45B</text><path d="M 48.0 87.1 L 103.3 91.8 L 158.7 88.5 L 214.0 51.4 L 269.3 64.6 L 324.7 76.8 L 380.0 71.9 L 435.3 29.2 L 490.7 28.7 L 546.0 62.1" class="line-series-1"/><circle cx="48.0" cy="87.1" r="3.6" class="mark-series-1"><title>FY24 Q1: $23.2B</title></circle><circle cx="103.3" cy="91.8" r="3.6" class="mark-series-1"><title>FY24 Q2: $21.8B</title></circle><circle cx="158.7" cy="88.5" r="3.6" class="mark-series-1"><title>FY24 Q3: $22.8B</title></circle><circle cx="214.0" cy="51.4" r="3.6" class="mark-series-1"><title>FY24 Q4: $33.4B</title></circle><circle cx="269.3" cy="64.6" r="3.6" class="mark-series-1"><title>FY25 Q1: $29.6B</title></circle><circle cx="324.7" cy="76.8" r="3.6" class="mark-series-1"><title>FY25 Q2: $26.1B</title></circle><circle cx="380.0" cy="71.9" r="3.6" class="mark-series-1"><title>FY25 Q3: $27.6B</title></circle><circle cx="435.3" cy="29.2" r="3.6" class="mark-series-1"><title>FY25 Q4: $39.8B</title></circle><circle cx="490.7" cy="28.7" r="3.6" class="mark-series-1"><title>FY26 Q1: $39.9B</title></circle><circle cx="546.0" cy="62.1" r="3.6" class="mark-series-1"><title>FY26 Q2: $30.3B</title></circle><text x="540.0" y="55.1" class="end-label" text-anchor="end">$30.3B</text><text x="48.0" y="186" class="axis-label" text-anchor="middle">FY24 Q1</text><text x="103.3" y="186" class="axis-label" text-anchor="middle">FY24 Q2</text><text x="158.7" y="186" class="axis-label" text-anchor="middle">FY24 Q3</text><text x="214.0" y="186" class="axis-label" text-anchor="middle">FY24 Q4</text><text x="269.3" y="186" class="axis-label" text-anchor="middle">FY25 Q1</text><text x="324.7" y="186" class="axis-label" text-anchor="middle">FY25 Q2</text><text x="380.0" y="186" class="axis-label" text-anchor="middle">FY25 Q3</text><text x="435.3" y="186" class="axis-label" text-anchor="middle">FY25 Q4</text><text x="490.7" y="186" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="546.0" y="186" class="axis-label" text-anchor="middle">FY26 Q2</text><line x1="48" y1="168.0" x2="546" y2="168.0" class="baseline-line"/></svg></div></div><div class="card"><h4 class="chart-title">Inventory $ — FY24 Q1 through FY26 Q2 (Actual)</h4><div class="chart-wrap"><svg viewBox="0 0 560 190" class="chart-svg" style="min-width:400px" role="img" aria-label="Inventory $ — FY24 Q1 through FY26 Q2 (Actual)"><line x1="48" y1="168.0" x2="546" y2="168.0" class="gridline"/><text x="42" y="171.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="129.0" x2="546" y2="129.0" class="gridline"/><text x="42" y="132.0" class="tick-label" text-anchor="end">2B</text><line x1="48" y1="90.0" x2="546" y2="90.0" class="gridline"/><text x="42" y="93.0" class="tick-label" text-anchor="end">4B</text><line x1="48" y1="51.0" x2="546" y2="51.0" class="gridline"/><text x="42" y="54.0" class="tick-label" text-anchor="end">6B</text><line x1="48" y1="12.0" x2="546" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">8B</text><path d="M 48.0 43.5 L 103.3 48.9 L 158.7 50.1 L 214.0 28.7 L 269.3 35.9 L 324.7 48.2 L 380.0 54.7 L 435.3 58.7 L 490.7 55.7 L 546.0 39.0" class="line-series-1"/><circle cx="48.0" cy="43.5" r="3.6" class="mark-series-1"><title>FY24 Q1: $6.5B</title></circle><circle cx="103.3" cy="48.9" r="3.6" class="mark-series-1"><title>FY24 Q2: $6.2B</title></circle><circle cx="158.7" cy="50.1" r="3.6" class="mark-series-1"><title>FY24 Q3: $6.2B</title></circle><circle cx="214.0" cy="28.7" r="3.6" class="mark-series-1"><title>FY24 Q4: $7.3B</title></circle><circle cx="269.3" cy="35.9" r="3.6" class="mark-series-1"><title>FY25 Q1: $6.9B</title></circle><circle cx="324.7" cy="48.2" r="3.6" class="mark-series-1"><title>FY25 Q2: $6.3B</title></circle><circle cx="380.0" cy="54.7" r="3.6" class="mark-series-1"><title>FY25 Q3: $5.9B</title></circle><circle cx="435.3" cy="58.7" r="3.6" class="mark-series-1"><title>FY25 Q4: $5.7B</title></circle><circle cx="490.7" cy="55.7" r="3.6" class="mark-series-1"><title>FY26 Q1: $5.9B</title></circle><circle cx="546.0" cy="39.0" r="3.6" class="mark-series-1"><title>FY26 Q2: $6.7B</title></circle><text x="540.0" y="32.0" class="end-label" text-anchor="end">$6.7B</text><text x="48.0" y="186" class="axis-label" text-anchor="middle">FY24 Q1</text><text x="103.3" y="186" class="axis-label" text-anchor="middle">FY24 Q2</text><text x="158.7" y="186" class="axis-label" text-anchor="middle">FY24 Q3</text><text x="214.0" y="186" class="axis-label" text-anchor="middle">FY24 Q4</text><text x="269.3" y="186" class="axis-label" text-anchor="middle">FY25 Q1</text><text x="324.7" y="186" class="axis-label" text-anchor="middle">FY25 Q2</text><text x="380.0" y="186" class="axis-label" text-anchor="middle">FY25 Q3</text><text x="435.3" y="186" class="axis-label" text-anchor="middle">FY25 Q4</text><text x="490.7" y="186" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="546.0" y="186" class="axis-label" text-anchor="middle">FY26 Q2</text><line x1="48" y1="168.0" x2="546" y2="168.0" class="baseline-line"/></svg></div></div><div class="card"><h4 class="chart-title">AP $ — FY24 Q1 through FY26 Q2 (Actual)</h4><div class="chart-wrap"><svg viewBox="0 0 560 190" class="chart-svg" style="min-width:400px" role="img" aria-label="AP $ — FY24 Q1 through FY26 Q2 (Actual)"><line x1="48" y1="168.0" x2="546" y2="168.0" class="gridline"/><text x="42" y="171.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="129.0" x2="546" y2="129.0" class="gridline"/><text x="42" y="132.0" class="tick-label" text-anchor="end">20B</text><line x1="48" y1="90.0" x2="546" y2="90.0" class="gridline"/><text x="42" y="93.0" class="tick-label" text-anchor="end">40B</text><line x1="48" y1="51.0" x2="546" y2="51.0" class="gridline"/><text x="42" y="54.0" class="tick-label" text-anchor="end">59B</text><line x1="48" y1="12.0" x2="546" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">79B</text><path d="M 48.0 53.3 L 103.3 77.7 L 158.7 74.1 L 214.0 31.9 L 269.3 45.8 L 324.7 61.2 L 380.0 68.6 L 435.3 30.1 L 490.7 28.7 L 546.0 54.8" class="line-series-1"/><circle cx="48.0" cy="53.3" r="3.6" class="mark-series-1"><title>FY24 Q1: $58.1B</title></circle><circle cx="103.3" cy="77.7" r="3.6" class="mark-series-1"><title>FY24 Q2: $45.8B</title></circle><circle cx="158.7" cy="74.1" r="3.6" class="mark-series-1"><title>FY24 Q3: $47.6B</title></circle><circle cx="214.0" cy="31.9" r="3.6" class="mark-series-1"><title>FY24 Q4: $69.0B</title></circle><circle cx="269.3" cy="45.8" r="3.6" class="mark-series-1"><title>FY25 Q1: $61.9B</title></circle><circle cx="324.7" cy="61.2" r="3.6" class="mark-series-1"><title>FY25 Q2: $54.1B</title></circle><circle cx="380.0" cy="68.6" r="3.6" class="mark-series-1"><title>FY25 Q3: $50.4B</title></circle><circle cx="435.3" cy="30.1" r="3.6" class="mark-series-1"><title>FY25 Q4: $69.9B</title></circle><circle cx="490.7" cy="28.7" r="3.6" class="mark-series-1"><title>FY26 Q1: $70.6B</title></circle><circle cx="546.0" cy="54.8" r="3.6" class="mark-series-1"><title>FY26 Q2: $57.3B</title></circle><text x="540.0" y="47.8" class="end-label" text-anchor="end">$57.3B</text><text x="48.0" y="186" class="axis-label" text-anchor="middle">FY24 Q1</text><text x="103.3" y="186" class="axis-label" text-anchor="middle">FY24 Q2</text><text x="158.7" y="186" class="axis-label" text-anchor="middle">FY24 Q3</text><text x="214.0" y="186" class="axis-label" text-anchor="middle">FY24 Q4</text><text x="269.3" y="186" class="axis-label" text-anchor="middle">FY25 Q1</text><text x="324.7" y="186" class="axis-label" text-anchor="middle">FY25 Q2</text><text x="380.0" y="186" class="axis-label" text-anchor="middle">FY25 Q3</text><text x="435.3" y="186" class="axis-label" text-anchor="middle">FY25 Q4</text><text x="490.7" y="186" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="546.0" y="186" class="axis-label" text-anchor="middle">FY26 Q2</text><line x1="48" y1="168.0" x2="546" y2="168.0" class="baseline-line"/></svg></div></div></div>
+      <div class="col-stack"><div class="card"><h4 class="chart-title">DSO (days) — FY26–FY27 (forecast, flat)</h4><div class="chart-wrap"><svg viewBox="0 0 560 190" class="chart-svg" style="min-width:400px" role="img" aria-label="DSO (days) — FY26–FY27 (forecast, flat)"><line x1="48" y1="168.0" x2="546" y2="168.0" class="gridline"/><text x="42" y="171.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="129.0" x2="546" y2="129.0" class="gridline"/><text x="42" y="132.0" class="tick-label" text-anchor="end">11</text><line x1="48" y1="90.0" x2="546" y2="90.0" class="gridline"/><text x="42" y="93.0" class="tick-label" text-anchor="end">22</text><line x1="48" y1="51.0" x2="546" y2="51.0" class="gridline"/><text x="42" y="54.0" class="tick-label" text-anchor="end">34</text><line x1="48" y1="12.0" x2="546" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">45</text><path d="M 48.0 53.6 L 119.1 53.6 L 190.3 53.6 L 261.4 53.6 L 332.6 53.6 L 403.7 53.6 L 474.9 53.6 L 546.0 53.6" class="line-series-1"/><circle cx="48.0" cy="53.6" r="3.6" class="mark-series-1"><title>FY26 Q1: 33</title></circle><circle cx="119.1" cy="53.6" r="3.6" class="mark-series-1"><title>FY26 Q2: 33</title></circle><circle cx="190.3" cy="53.6" r="3.6" class="mark-series-1"><title>FY26 Q3: 33</title></circle><circle cx="261.4" cy="53.6" r="3.6" class="mark-series-1"><title>FY26 Q4: 33</title></circle><circle cx="332.6" cy="53.6" r="3.6" class="mark-series-1"><title>FY27 Q1: 33</title></circle><circle cx="403.7" cy="53.6" r="3.6" class="mark-series-1"><title>FY27 Q2: 33</title></circle><circle cx="474.9" cy="53.6" r="3.6" class="mark-series-1"><title>FY27 Q3: 33</title></circle><circle cx="546.0" cy="53.6" r="3.6" class="mark-series-1"><title>FY27 Q4: 33</title></circle><text x="540.0" y="46.6" class="end-label" text-anchor="end">33</text><text x="48.0" y="186" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="119.1" y="186" class="axis-label" text-anchor="middle">FY26 Q2</text><text x="190.3" y="186" class="axis-label" text-anchor="middle">FY26 Q3</text><text x="261.4" y="186" class="axis-label" text-anchor="middle">FY26 Q4</text><text x="332.6" y="186" class="axis-label" text-anchor="middle">FY27 Q1</text><text x="403.7" y="186" class="axis-label" text-anchor="middle">FY27 Q2</text><text x="474.9" y="186" class="axis-label" text-anchor="middle">FY27 Q3</text><text x="546.0" y="186" class="axis-label" text-anchor="middle">FY27 Q4</text><line x1="48" y1="168.0" x2="546" y2="168.0" class="baseline-line"/></svg></div></div><div class="card"><h4 class="chart-title">DIO (days) — FY26–FY27 (forecast, flat)</h4><div class="chart-wrap"><svg viewBox="0 0 560 190" class="chart-svg" style="min-width:400px" role="img" aria-label="DIO (days) — FY26–FY27 (forecast, flat)"><line x1="48" y1="168.0" x2="546" y2="168.0" class="gridline"/><text x="42" y="171.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="129.0" x2="546" y2="129.0" class="gridline"/><text x="42" y="132.0" class="tick-label" text-anchor="end">5</text><line x1="48" y1="90.0" x2="546" y2="90.0" class="gridline"/><text x="42" y="93.0" class="tick-label" text-anchor="end">10</text><line x1="48" y1="51.0" x2="546" y2="51.0" class="gridline"/><text x="42" y="54.0" class="tick-label" text-anchor="end">15</text><line x1="48" y1="12.0" x2="546" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">20</text><path d="M 48.0 90.0 L 119.1 90.0 L 190.3 90.0 L 261.4 90.0 L 332.6 90.0 L 403.7 90.0 L 474.9 90.0 L 546.0 90.0" class="line-series-1"/><circle cx="48.0" cy="90.0" r="3.6" class="mark-series-1"><title>FY26 Q1: 10</title></circle><circle cx="119.1" cy="90.0" r="3.6" class="mark-series-1"><title>FY26 Q2: 10</title></circle><circle cx="190.3" cy="90.0" r="3.6" class="mark-series-1"><title>FY26 Q3: 10</title></circle><circle cx="261.4" cy="90.0" r="3.6" class="mark-series-1"><title>FY26 Q4: 10</title></circle><circle cx="332.6" cy="90.0" r="3.6" class="mark-series-1"><title>FY27 Q1: 10</title></circle><circle cx="403.7" cy="90.0" r="3.6" class="mark-series-1"><title>FY27 Q2: 10</title></circle><circle cx="474.9" cy="90.0" r="3.6" class="mark-series-1"><title>FY27 Q3: 10</title></circle><circle cx="546.0" cy="90.0" r="3.6" class="mark-series-1"><title>FY27 Q4: 10</title></circle><text x="540.0" y="83.0" class="end-label" text-anchor="end">10</text><text x="48.0" y="186" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="119.1" y="186" class="axis-label" text-anchor="middle">FY26 Q2</text><text x="190.3" y="186" class="axis-label" text-anchor="middle">FY26 Q3</text><text x="261.4" y="186" class="axis-label" text-anchor="middle">FY26 Q4</text><text x="332.6" y="186" class="axis-label" text-anchor="middle">FY27 Q1</text><text x="403.7" y="186" class="axis-label" text-anchor="middle">FY27 Q2</text><text x="474.9" y="186" class="axis-label" text-anchor="middle">FY27 Q3</text><text x="546.0" y="186" class="axis-label" text-anchor="middle">FY27 Q4</text><line x1="48" y1="168.0" x2="546" y2="168.0" class="baseline-line"/></svg></div></div><div class="card"><h4 class="chart-title">DPO (days) — FY26–FY27 (forecast, flat)</h4><div class="chart-wrap"><svg viewBox="0 0 560 190" class="chart-svg" style="min-width:400px" role="img" aria-label="DPO (days) — FY26–FY27 (forecast, flat)"><line x1="48" y1="168.0" x2="546" y2="168.0" class="gridline"/><text x="42" y="171.0" class="tick-label" text-anchor="end">0</text><line x1="48" y1="129.0" x2="546" y2="129.0" class="gridline"/><text x="42" y="132.0" class="tick-label" text-anchor="end">35</text><line x1="48" y1="90.0" x2="546" y2="90.0" class="gridline"/><text x="42" y="93.0" class="tick-label" text-anchor="end">70</text><line x1="48" y1="51.0" x2="546" y2="51.0" class="gridline"/><text x="42" y="54.0" class="tick-label" text-anchor="end">105</text><line x1="48" y1="12.0" x2="546" y2="12.0" class="gridline"/><text x="42" y="15.0" class="tick-label" text-anchor="end">140</text><path d="M 48.0 39.9 L 119.1 39.9 L 190.3 39.9 L 261.4 39.9 L 332.6 39.9 L 403.7 39.9 L 474.9 39.9 L 546.0 39.9" class="line-series-1"/><circle cx="48.0" cy="39.9" r="3.6" class="mark-series-1"><title>FY26 Q1: 115</title></circle><circle cx="119.1" cy="39.9" r="3.6" class="mark-series-1"><title>FY26 Q2: 115</title></circle><circle cx="190.3" cy="39.9" r="3.6" class="mark-series-1"><title>FY26 Q3: 115</title></circle><circle cx="261.4" cy="39.9" r="3.6" class="mark-series-1"><title>FY26 Q4: 115</title></circle><circle cx="332.6" cy="39.9" r="3.6" class="mark-series-1"><title>FY27 Q1: 115</title></circle><circle cx="403.7" cy="39.9" r="3.6" class="mark-series-1"><title>FY27 Q2: 115</title></circle><circle cx="474.9" cy="39.9" r="3.6" class="mark-series-1"><title>FY27 Q3: 115</title></circle><circle cx="546.0" cy="39.9" r="3.6" class="mark-series-1"><title>FY27 Q4: 115</title></circle><text x="540.0" y="32.9" class="end-label" text-anchor="end">115</text><text x="48.0" y="186" class="axis-label" text-anchor="middle">FY26 Q1</text><text x="119.1" y="186" class="axis-label" text-anchor="middle">FY26 Q2</text><text x="190.3" y="186" class="axis-label" text-anchor="middle">FY26 Q3</text><text x="261.4" y="186" class="axis-label" text-anchor="middle">FY26 Q4</text><text x="332.6" y="186" class="axis-label" text-anchor="middle">FY27 Q1</text><text x="403.7" y="186" class="axis-label" text-anchor="middle">FY27 Q2</text><text x="474.9" y="186" class="axis-label" text-anchor="middle">FY27 Q3</text><text x="546.0" y="186" class="axis-label" text-anchor="middle">FY27 Q4</text><line x1="48" y1="168.0" x2="546" y2="168.0" class="baseline-line"/></svg></div></div></div>
+    </div>
+    <div class="caution"><div class="caution-title">CAVEAT — Working Capital Calibration (Phase 3 disclosure: Drivers!A44, BS!A65:A66 of 03 Driver-Based Rolling Forecast Model.xlsx)</div><p class="caution-text">DSO/DIO/DPO (33/10/115 days) are based on year-end balances and held flat by quarter. This overstates high-revenue quarters: modeled FY26 Q1 AR/Inventory/AP run +22.2% / +31.5% / +25.8% above actuals. Treat working-capital days and CCC as directional until quarter-specific seasonality is added.</p></div>
+    
+        </section>
+        <section class="page" id="page-bridge" aria-labelledby="h-bridge">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-bridge">Forecast Bridge</h1>
+            <p class="page-subtitle">Two distinct views of the same revenue variance: WHEN it changed (Forecast Vintage Bridge) vs. WHY it changed (Driver Attribution Bridge) — not one chart</p>
+          </div>
+          
+    <section class="subsection">
+      <h3 class="block-title">Forecast Vintage Bridge — WHEN did the forecast change?</h3>
+      <p class="block-sub">Three separate waterfalls, one per vintage-to-vintage step — matches Phase 3&#x27;s Forecast Bridge tab exactly (not one chained AOP→Q1FU→Q3RF cascade)</p>
+      <div class="three-col"><div class="card"><h4 class="chart-title">Waterfall A — AOP (Q1) → Q1 Actual</h4><div class="chart-wrap"><svg viewBox="0 0 380 210" class="chart-svg" style="min-width:300px" role="img" aria-label="Waterfall A — AOP (Q1) → Q1 Actual"><line x1="12" y1="174.0" x2="368" y2="174.0" class="baseline-line"/><rect x="39.3" y="67.0" width="64.0" height="107.0" rx="3" style="fill:var(--baseline)"><title>AOP (Q1): $133.1B</title></rect><text x="71.3" y="61.0" class="bar-value" text-anchor="middle">$133.1B</text><text x="71.3" y="188.0" class="axis-label" text-anchor="middle">AOP</text><text x="71.3" y="198.0" class="axis-label" text-anchor="middle">(Q1)</text><line x1="130.7" y1="67.0" x2="158.0" y2="67.0" class="connector"/><rect x="158.0" y="58.4" width="64.0" height="8.6" rx="3" style="fill:var(--status-good)"><title>Beat: +$10.7B</title></rect><text x="190.0" y="52.4" class="bar-value" text-anchor="middle">+$10.7B</text><text x="190.0" y="188.0" class="axis-label" text-anchor="middle">Beat</text><line x1="249.3" y1="58.4" x2="276.7" y2="58.4" class="connector"/><rect x="276.7" y="58.4" width="64.0" height="115.6" rx="3" style="fill:var(--series-1)"><title>Actual (Q1): $143.8B</title></rect><text x="308.7" y="52.4" class="bar-value" text-anchor="middle">$143.8B</text><text x="308.7" y="188.0" class="axis-label" text-anchor="middle">Actual</text><text x="308.7" y="198.0" class="axis-label" text-anchor="middle">(Q1)</text></svg></div><p class="chart-sub">Real actual-vs-plan variance</p><p class="chart-caption">Ties to Phase 3&#x27;s Forecast Bridge tab row 26 CHECK ($10,661.77M Bridge Sum vs. IS Tab Total, diff ~$0). Re-derived here from Fact_Forecast: $133.1B, variance +8.0%, = $143.8B.</p></div><div class="card"><h4 class="chart-title">Waterfall B — Q1 FC Update (Q2) → Q2 Actual</h4><div class="chart-wrap"><svg viewBox="0 0 380 210" class="chart-svg" style="min-width:300px" role="img" aria-label="Waterfall B — Q1 FC Update (Q2) → Q2 Actual"><line x1="12" y1="174.0" x2="368" y2="174.0" class="baseline-line"/><rect x="39.3" y="65.8" width="64.0" height="108.2" rx="3" style="fill:var(--baseline)"><title>Q1 FU (Q2): $104.0B</title></rect><text x="71.3" y="59.8" class="bar-value" text-anchor="middle">$104.0B</text><text x="71.3" y="188.0" class="axis-label" text-anchor="middle">Q1 FU</text><text x="71.3" y="198.0" class="axis-label" text-anchor="middle">(Q2)</text><line x1="130.7" y1="65.8" x2="158.0" y2="65.8" class="connector"/><rect x="158.0" y="58.4" width="64.0" height="7.5" rx="3" style="fill:var(--status-good)"><title>Beat: +$7.2B</title></rect><text x="190.0" y="52.4" class="bar-value" text-anchor="middle">+$7.2B</text><text x="190.0" y="188.0" class="axis-label" text-anchor="middle">Beat</text><line x1="249.3" y1="58.4" x2="276.7" y2="58.4" class="connector"/><rect x="276.7" y="58.4" width="64.0" height="115.6" rx="3" style="fill:var(--series-1)"><title>Actual (Q2): $111.2B</title></rect><text x="308.7" y="52.4" class="bar-value" text-anchor="middle">$111.2B</text><text x="308.7" y="188.0" class="axis-label" text-anchor="middle">Actual</text><text x="308.7" y="198.0" class="axis-label" text-anchor="middle">(Q2)</text></svg></div><p class="chart-sub">Real actual-vs-plan variance</p><p class="chart-caption">Ties to Phase 3&#x27;s Forecast Bridge tab row 37 CHECK ($7,172.07M Bridge Sum vs. IS Tab Total, diff ~$0). Re-derived here from Fact_Forecast: $104.0B, variance +6.9%, = $111.2B.</p></div><div class="card"><h4 class="chart-title">Waterfall C — Q1 FU (Q3+Q4) → Q3 Reforecast (Q3+Q4)</h4><div class="chart-wrap"><svg viewBox="0 0 380 210" class="chart-svg" style="min-width:300px" role="img" aria-label="Waterfall C — Q1 FU (Q3+Q4) → Q3 Reforecast (Q3+Q4)"><line x1="12" y1="174.0" x2="368" y2="174.0" class="baseline-line"/><rect x="39.3" y="60.2" width="64.0" height="113.8" rx="3" style="fill:var(--baseline)"><title>Q1 FU (Q3+Q4): $210.7B</title></rect><text x="71.3" y="54.2" class="bar-value" text-anchor="middle">$210.7B</text><text x="71.3" y="188.0" class="axis-label" text-anchor="middle">Q1 FU</text><text x="71.3" y="198.0" class="axis-label" text-anchor="middle">(Q3+Q4)</text><line x1="130.7" y1="60.2" x2="158.0" y2="60.2" class="connector"/><rect x="158.0" y="58.4" width="64.0" height="1.8" rx="3" style="fill:var(--status-good)"><title>Revision: +$3.4B</title></rect><text x="190.0" y="52.4" class="bar-value" text-anchor="middle">+$3.4B</text><text x="190.0" y="188.0" class="axis-label" text-anchor="middle">Revision</text><line x1="249.3" y1="58.4" x2="276.7" y2="58.4" class="connector"/><rect x="276.7" y="58.4" width="64.0" height="115.6" rx="3" style="fill:var(--series-1)"><title>Q3 RF (Q3+Q4): $214.0B</title></rect><text x="308.7" y="52.4" class="bar-value" text-anchor="middle">$214.0B</text><text x="308.7" y="188.0" class="axis-label" text-anchor="middle">Q3 RF</text><text x="308.7" y="198.0" class="axis-label" text-anchor="middle">(Q3+Q4)</text></svg></div><p class="chart-sub">Forecast revision, not yet realized (Q3-Q4 FY26 haven&#x27;t happened)</p><p class="chart-caption">Ties to Phase 3&#x27;s Forecast Bridge tab row 48 CHECK ($3,350.44M Bridge Sum vs. IS Tab Total, diff ~$0). Re-derived here from Fact_Forecast: $210.7B, variance +1.6%, = $214.0B.</p></div></div>
+    </section>
+    <section class="subsection">
+      <h3 class="block-title">Driver Attribution Bridge — WHY did the forecast change?</h3>
+      <p class="block-sub">Total-company Revenue, FY26 Q2 Actual vs. Q1 Forecast Update (same comparison as Waterfall B, decomposed by driver instead of by time) — summed across all 5 segments.</p>
+      <div class="card"><h4 class="chart-title">Total Company Revenue — Prior Forecast → Units → ASP → FX → Mix → Updated Forecast (FY26 Q2)</h4><div class="chart-wrap"><svg viewBox="0 0 820 230" class="chart-svg" style="min-width:680px" role="img" aria-label="Total Company Revenue — Prior Forecast → Units → ASP → FX → Mix → Updated Forecast (FY26 Q2)"><line x1="12" y1="194.0" x2="808" y2="194.0" class="baseline-line"/><rect x="46.3" y="71.2" width="64.0" height="122.8" rx="3" style="fill:var(--baseline)"><title>Prior Forecast: $104,012M</title></rect><text x="78.3" y="65.2" class="bar-value" text-anchor="middle">$104,012M</text><text x="78.3" y="208.0" class="axis-label" text-anchor="middle">Prior</text><text x="78.3" y="218.0" class="axis-label" text-anchor="middle">Forecast</text><line x1="144.7" y1="71.2" x2="179.0" y2="71.2" class="connector"/><rect x="179.0" y="67.0" width="64.0" height="4.2" rx="3" style="fill:var(--series-1)"><title>Units: +$3,585M</title></rect><text x="211.0" y="61.0" class="bar-value" text-anchor="middle">+$3,585M</text><text x="211.0" y="208.0" class="axis-label" text-anchor="middle">Units</text><line x1="277.3" y1="67.0" x2="311.7" y2="67.0" class="connector"/><rect x="311.7" y="62.8" width="64.0" height="4.2" rx="3" style="fill:var(--series-2)"><title>ASP: +$3,588M</title></rect><text x="343.7" y="56.8" class="bar-value" text-anchor="middle">+$3,588M</text><text x="343.7" y="208.0" class="axis-label" text-anchor="middle">ASP</text><line x1="410.0" y1="62.8" x2="444.3" y2="62.8" class="connector"/><rect x="444.3" y="62.8" width="64.0" height="1.2" rx="3" style="fill:var(--series-3)"><title>FX: +$0M</title></rect><text x="476.3" y="56.8" class="bar-value" text-anchor="middle">+$0M</text><text x="476.3" y="208.0" class="axis-label" text-anchor="middle">FX</text><line x1="542.7" y1="62.8" x2="577.0" y2="62.8" class="connector"/><rect x="577.0" y="62.8" width="64.0" height="1.2" rx="3" style="fill:var(--series-4)"><title>Mix: +$0M</title></rect><text x="609.0" y="56.8" class="bar-value" text-anchor="middle">+$0M</text><text x="609.0" y="208.0" class="axis-label" text-anchor="middle">Mix</text><line x1="675.3" y1="62.8" x2="709.7" y2="62.8" class="connector"/><rect x="709.7" y="62.7" width="64.0" height="131.3" rx="3" style="fill:var(--series-7)"><title>Updated Forecast: $111,184M</title></rect><text x="741.7" y="56.7" class="bar-value" text-anchor="middle">$111,184M</text><text x="741.7" y="208.0" class="axis-label" text-anchor="middle">Updated</text><text x="741.7" y="218.0" class="axis-label" text-anchor="middle">Forecast</text></svg></div><div class="legend-row"><span class="legend-item"><i class="swatch" style="background:var(--series-1)"></i>Units</span><span class="legend-item"><i class="swatch" style="background:var(--series-2)"></i>ASP</span><span class="legend-item"><i class="swatch" style="background:var(--series-3)"></i>FX</span><span class="legend-item"><i class="swatch" style="background:var(--series-4)"></i>Mix</span></div><p class="chart-sub">$104.0B + $7,172M = $111.2B (ties to Waterfall B&#x27;s $7,172.07M and Phase 3&#x27;s Forecast Bridge tab row 37 CHECK)</p></div>
+    </section>
+    <div class="caution"><div class="caution-title">CAVEAT — Driver Attribution Bridge is an ESTIMATED allocation, not a causal decomposition</div><p class="caution-text">Apple does not disclose quarterly Units/ASP or segment actuals. The Units/ASP/FX/Mix bridge is a proportional model allocation, not measured causal attribution. The forecast-vintage bridge above still ties to actual-vs-plan and forecast-revision dollars; only this driver split is estimated.</p></div>
+    
+        </section>
+        <section class="page" id="page-scenario" aria-labelledby="h-scenario">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-scenario">Scenario</h1>
+            <p class="page-subtitle">FY2027 Annual Operating Plan snapshot (period=&#x27;FY27 Total&#x27;, vintage=&#x27;FY2027 AOP&#x27;) — the only 8 metrics with real Bull/Bear rows anywhere in Fact_Forecast</p>
+          </div>
+          
+    <div class="card"><h4 class="chart-title">FY2027 AOP Scenario Snapshot — 8 core metrics</h4><div class="table-scroll"><table class="data-table scenario-table"><thead><tr><th>Metric</th><th>Bear</th><th>Base</th><th>Bull</th><th>Bear vs. Base (downside)</th><th>Bull vs. Base (upside)</th></tr></thead><tbody><tr><td>Revenue</td><td>$437.5B</td><td>$472.6B</td><td>$498.8B</td><td><span class="cell-value">-7.4%</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td><td><span class="cell-value">+5.5%</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Gross Margin $</td><td>$204.8B</td><td>$227.9B</td><td>$245.9B</td><td><span class="cell-value">-10.2%</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td><td><span class="cell-value">+7.9%</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Gross Margin %</td><td>46.8%</td><td>48.2%</td><td>49.3%</td><td><span class="cell-value">-142 bps</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td><td><span class="cell-value">+106 bps</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Operating Income</td><td>$133.9B</td><td>$157.5B</td><td>$176.0B</td><td><span class="cell-value">-15.0%</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td><td><span class="cell-value">+11.8%</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Net Income</td><td>$109.8B</td><td>$132.3B</td><td>$149.6B</td><td><span class="cell-value">-17.0%</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td><td><span class="cell-value">+13.1%</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>EPS</td><td>$7.46</td><td>$8.99</td><td>$10.17</td><td><span class="cell-value">-17.0%</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td><td><span class="cell-value">+13.1%</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr><tr><td>Cash</td><td>$56.1B</td><td>$23.4B</td><td>-$8.9B</td><td><span class="cell-value">+140.2%</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td><td><span class="cell-value">-138.2%</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td></tr><tr><td>FCF</td><td>$108.5B</td><td>$134.2B</td><td>$153.2B</td><td><span class="cell-value">-19.1%</span><span class="status-chip status-critical chip-sm"><i class="chip-dot" aria-hidden="true"></i>RED</span></td><td><span class="cell-value">+14.2%</span><span class="status-chip status-good chip-sm"><i class="chip-dot" aria-hidden="true"></i>GREEN</span></td></tr></tbody></table></div></div>
+    <div class="two-col">
+      <div class="card"><h4 class="chart-title">Cash — Bull Scenario, Quarterly (FY2027 AOP)</h4><div class="chart-wrap"><svg viewBox="0 0 440 220" class="chart-svg" style="min-width:360px" role="img" aria-label="Cash — Bull Scenario, Quarterly (FY2027 AOP)"><line x1="12" y1="103.9" x2="428" y2="103.9" class="baseline-line"/><rect x="34.9" y="43.0" width="58.2" height="60.9" rx="3" style="fill:var(--status-critical)"><title>Q1: $7,790M</title></rect><text x="64.0" y="37.0" class="bar-value" text-anchor="middle">$7,790M</text><text x="64.0" y="198.0" class="axis-label" text-anchor="middle">Q1</text><line x1="116.0" y1="43.0" x2="138.9" y2="43.0" class="connector"/><rect x="138.9" y="86.2" width="58.2" height="17.7" rx="3" style="fill:var(--status-critical)"><title>Q2: $2,269M</title></rect><text x="168.0" y="80.2" class="bar-value" text-anchor="middle">$2,269M</text><text x="168.0" y="198.0" class="axis-label" text-anchor="middle">Q2</text><line x1="220.0" y1="86.2" x2="242.9" y2="86.2" class="connector"/><rect x="242.9" y="103.9" width="58.2" height="23.9" rx="3" style="fill:var(--status-critical)"><title>Q3: -$3,062M</title></rect><text x="272.0" y="97.9" class="bar-value" text-anchor="middle">-$3,062M</text><text x="272.0" y="198.0" class="axis-label" text-anchor="middle">Q3</text><line x1="324.0" y1="103.9" x2="346.9" y2="103.9" class="connector"/><rect x="346.9" y="103.9" width="58.2" height="69.7" rx="3" style="fill:var(--status-critical)"><title>Q4: -$8,916M</title></rect><text x="376.0" y="97.9" class="bar-value" text-anchor="middle">-$8,916M</text><text x="376.0" y="198.0" class="axis-label" text-anchor="middle">Q4</text></svg></div><p class="chart-caption">Ending-balance snapshot per quarter; bar color = status vs. Base same quarter (cash_floor basis, floor=$0)</p></div>
+      <div class="card"><div class="finding"><div class="finding-title">Observation</div><p>Under the Bull scenario, Cash turns negative starting FY2027 Q3 (-$3,062M) and falls further to -$8,916M by FY2027 Q4 — two consecutive quarters below the $0 cash floor, which forces RED status regardless of the favorable Bull-vs-Base growth in Revenue/EPS/FCF shown in the table above (cash_floor&#x27;s floor check short-circuits the variance check, per dashboard_calc.py). Root cause, per Phase 3&#x27;s own disclosure (BS! tab, cell A2): Bull sets the Buyback_Pct_FCF_Active driver to 100% of FCF every quarter, with dividends layered on top and no revolver or cash-sweep mechanic modeled — a deterministic drain baked in from FY2027 Q1 onward, not a one-quarter tail event. See the Planning Recommendations page for a quantified 3-option planning response to this finding.</p></div></div>
+    </div>
+    <div class="caution"><div class="caution-title">Scope note — why only these 8 metrics appear on this page</div><p class="caution-text">Only Revenue, Gross Margin $, Gross Margin %, Operating Income, Net Income, EPS, Cash and FCF carry real scenario=&quot;Bull&quot;/&quot;Bear&quot; rows anywhere in Fact_Forecast (confirmed by querying the full fact table: exactly these 8 metric names, 15 rows each — 4 quarters + 1 annual total, x Base/Bull/Bear — at vintage=&#x27;FY2027 AOP&#x27;). No other metric (segment revenue, DSO/DIO/DPO, CapEx $/Buyback $/Dividend $, Total Assets/Liabilities/Equity, any Bridge Variance row) has a stored Bull/Bear snapshot in this workbook — none is estimated or fabricated here to fill out the page.</p></div>
+    
+        </section>
+        <section class="page" id="page-recommendation" aria-labelledby="h-recommendation">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-recommendation">Planning Recommendations</h1>
+            <p class="page-subtitle">Planning call and business-partner questions for the next AOP refresh.</p>
+          </div>
+          
+    <div class="table-scroll"><table class="data-table rec-table"><thead><tr><th>Issue / Option</th><th>Evidence</th><th>Financial Impact</th><th>Recommendation</th><th>Owner</th><th>Timing</th></tr></thead><tbody><tr class=""><td>Planning call: fund AI-enabled feature rollout in the FY27 case</td><td>FY26 Q2 revenue beat forecast by $7,172M (+6.9%), but operating margin compressed 271 bps.</td><td>R&amp;D was +45.0% above plan and SG&amp;A was +37.9% above plan.</td><td>Move FY27 planning to a funded AI-enabled feature rollout case. Do not hold AI spend in a generic opex reserve.</td><td>FP&amp;A / Product Finance</td><td>Before FY27 AOP lock</td></tr><tr class=""><td>Business Partner Question - Commercial / Marketing</td><td>Services variance was $2,007M in FY26 Q2 based on the model&#x27;s reconstructed segment bridge.</td><td>Is subscription attachment structurally above plan, or was Q2 helped by timing, channel mix, or promotional activity?</td><td>Raise the FY27 subscription attachment case if Q3 confirms mix strength; hold ARPU flat until evidence improves.</td><td>Commercial Finance / Marketing</td><td>After Q3 results</td></tr><tr class="rec-row-flag"><td><strong>Business Partner Question - Product / Sales</strong></td><td>iPhone variance was $3,534M in FY26 Q2 based on the model&#x27;s reconstructed segment bridge.</td><td>How much of the beat came from units, ASP, region mix, or premium feature adoption timing?</td><td>Increase the FY27 adoption-rate case only for markets where demand and channel inventory support it.</td><td>Sales / Product Finance</td><td>FY27 AOP refresh</td></tr><tr class=""><td>Business Partner Question - Operations</td><td>Gross margin was 49.3% and operating margin was 32.3%.</td><td>Which AI infrastructure costs are committed, which are capacity buffers, and which can be phased?</td><td>Set a gross margin guardrail before locking AI infrastructure spend; show subscription mix offset separately.</td><td>FP&amp;A / Operations</td><td>Next planning review</td></tr><tr class=""><td>Forecast bias should be managed by driver</td><td>Revenue MAPE remains above the red threshold and bias is positive across the two available actual-vs-forecast pairs.</td><td>Repeated upside can lead to underfunded capacity, opex timing issues, and weak business-partner trust in the plan.</td><td>Track forecast error by units, ASP, subscription attachment, FX, and mix instead of reporting only total revenue MAPE.</td><td>FP&amp;A</td><td>Monthly forecast cycle</td></tr></tbody></table></div>
+    <p class="footnote">Detailed model limitations are summarized in the appendix. AI adoption, subscription attachment, upgrade rate, and investment capacity are public-data estimates.</p>
+    
+        </section>
+        <section class="page" id="page-appendix" aria-labelledby="h-appendix">
+          <div class="topbar">
+            <div class="page-eyebrow">Apple FP&amp;A &mdash; Planning Dashboard</div>
+            <h1 class="page-title" id="h-appendix">Appendix</h1>
+            <p class="page-subtitle">Metric definitions, threshold assumptions, data lineage (Output tab → Fact_Forecast reshape), and the disclosed Phase 3 modeling limitations carried into this dashboard</p>
+          </div>
+          
+    <div class="card"><h3 class="block-title">Metric Groups &amp; Definitions</h3><div class="table-scroll"><table class="data-table "><thead><tr><th>Group</th><th>Metrics in group</th><th>Definition / threshold basis</th></tr></thead><tbody><tr><td>Revenue</td><td>Revenue, iPhone/Mac/iPad/Wearables/Services Revenue</td><td>Net sales, total company and by product segment ($M). higher_is_better, variance_pct.</td></tr><tr><td>Margin</td><td>Gross Margin $/%, Operating Margin %, Operating Income, Net Income</td><td>Profitability lines ($/% pairs both stored). Margin % metrics use the bps basis (green &gt;=0bps, yellow 0 to -50bps, red worse); $ lines use variance_pct.</td></tr><tr><td>EPS</td><td>EPS</td><td>Diluted earnings per share ($/share). higher_is_better, variance_pct.</td></tr><tr><td>Cash</td><td>Cash, FCF, CapEx $, Buyback $, Dividend $</td><td>Cash balance, free cash flow, and the 3 capital-allocation outflows. Cash/FCF use cash_floor (variance_pct PLUS a $0-floor override — below floor is always RED). CapEx $/Buyback $/Dividend $ are stored as NEGATIVE outflows and need the sign-flip rule below before variance math.</td></tr><tr><td>Working Capital</td><td>AR $, Inventory $, AP $, DSO, DIO, DPO, Total Assets/Liabilities/Equity $</td><td>Balance-sheet and cash-conversion-cycle lines, all variance_pct (no dedicated threshold row exists for this group in the source plan — variance_pct was the closest generic basis available).</td></tr><tr><td>Cost</td><td>R&amp;D $, SG&amp;A $</td><td>Operating expense lines. lower_is_better, variance_pct.</td></tr><tr><td>Bridge Variance</td><td>Revenue/Gross Margin/Operating Income/Net Income/EPS Variance $, plus 25 per-segment Units/ASP/FX/Mix variance rows</td><td>31 metrics whose stored VALUE already IS a variance (not a raw actual needing one computed). threshold_basis=not_applicable — render as waterfall bars, never a colored KPI tile (traffic_light_status() returns None by design).</td></tr></tbody></table></div></div>
+    <div class="two-col"><div class="card"><h3 class="block-title">Data Lineage</h3><p class="body-text">Every number in this dashboard traces to one Fact_Forecast row (period, fiscal_year, fiscal_quarter, metric, scenario, vintage, actual_or_forecast, value), read via get_fact(), which raises rather than guesses if a lookup returns 0 or &gt;1 rows. Fact_Forecast + Dim_Metric (Apple FP&amp;A Case Study\04a Power BI Data Model.xlsx) were built in Task 1 by reshaping the certified Output tab of 03 Driver-Based Rolling Forecast Model.xlsx (786 flat rows, read-only, never modified) into a star schema: 786 Fact_Forecast rows (exact count match, 0 exclusions) and 59 Dim_Metric rows (one per distinct metric in Output). A full row-by-row diff of period/vintage/scenario/metric/value between the Output tab and Fact_Forecast found 0 mismatches across all 786 rows, including floating-point value comparison. The workbook contains zero formulas by design — values are literal snapshots of the Output tab&#x27;s cached results, not live cross-workbook links — and is reproducible via scripts\build_dashboard_datamodel.py. Every threshold/favorability rule in data\dashboard_calc.py is transcribed from the ReadMe tab of that same workbook. This HTML dashboard (Task 8) and the PDF dashboard (Tasks 4-7) both call the identical get_fact()/evaluate_metric()/fmt_*() functions to produce every figure shown — the two deliverables cannot silently disagree on a number by construction.</p><h4 class="chart-title">Confidence Level Rubric (page-1 KPI tiles)</h4><p class="body-text"><strong>High</strong> — a real, disclosed Actual figure in Fact_Forecast (not an Implied Actual), driven by directly observable inputs.</p><p class="body-text"><strong>Medium</strong> — real but depends on a chained assumption (e.g. EPS&#x27;s share-count/buyback timing; FCF has no real Actual row at all).</p><p class="body-text"><strong>Low</strong> — depends on a Scenario-level (Bull/Bear) assumption stack with no actual data ever validating it.</p><p class="chart-caption">Owner tagging covers page 1&#x27;s 6 KPIs only, not all 59 Dim_Metric rows. Confidence Level measures assumption provenance — a DIFFERENT axis than the Forecast Accuracy (MAPE) tile, which measures historical track record. A metric can be High confidence in provenance while reading RED on accuracy this period (e.g., Revenue).</p></div><div class="card"><h3 class="block-title">Threshold Assumptions (data\dashboard_calc.py, per the ReadMe tab)</h3><div class="table-scroll"><table class="data-table "><thead><tr><th>Basis</th><th>Green</th><th>Yellow</th><th>Red</th><th>Applies to</th></tr></thead><tbody><tr><td>variance_pct</td><td>fav&gt;=0%</td><td>0 to -3%</td><td>&lt; -3%</td><td>Most $ metrics + Revenue/OI/EPS. Sign flip applied first for CapEx $/Buyback $/Dividend $ (below).</td></tr><tr><td>bps</td><td>fav&gt;=0bps</td><td>0 to -50bps</td><td>&lt; -50bps</td><td>Gross Margin %, Operating Margin %.</td></tr><tr><td>cash_floor</td><td>≥floor &amp; fav&gt;=0%</td><td>≥floor &amp; fav in (0,-3%]</td><td>&lt;floor, OR ≥floor &amp; fav&lt; -3%</td><td>Cash, FCF. Floor check short-circuits the variance check (dashboard_calc.py self-test).</td></tr><tr><td>mape (unused)</td><td>&lt;=2%</td><td>2% to 5%</td><td>&gt;5%</td><td>No Dim_Metric row uses this basis yet; the Forecast Accuracy tile on the Current View page builds one explicitly (REVENUE_MAPE_METRIC_ROW).</td></tr></tbody></table></div><p class="chart-caption">Sign-flip rule: CapEx $/Buyback $/Dividend $ are stored as NEGATIVE cash outflows. apply_sign_convention() multiplies by -1 before variance math so a bigger outflow reads as a larger positive spend-magnitude and each metric&#x27;s tagged favorability_direction (CapEx $ = lower_is_better, Buyback $/Dividend $ = higher_is_better) reads correctly. DPO/AP $ favorability = higher_is_better for both (extending payables is a cash-conversion positive).</p></div></div>
+    <h3 class="block-title">Disclosed Phase 3 Limitations (verbatim-sourced, surfaced not omitted)</h3>
+    <div class="three-col"><div class="caution"><div class="caution-title">1. Working-capital calibration gap</div><p class="caution-text">DSO/DIO/DPO are calibrated from year-end balances and held flat by quarter. Modeled FY26 Q1 AR/Inventory/AP run +22.2% / +31.5% / +25.8% above actuals.</p></div><div class="caution"><div class="caution-title">2. BS/CF cash re-anchoring</div><p class="caution-text">Forecast cash rolls from the last fully modeled column rather than re-anchoring to actual overlays. This keeps the balance check at $0 but creates a cash gap versus reported cash.</p></div><div class="caution"><div class="caution-title">3. Driver attribution</div><p class="caution-text">Apple does not disclose quarterly Units/ASP or segment actuals. The driver split is a proportional model allocation; the forecast-vintage bridge still ties to actual-vs-plan dollars.</p></div></div>
+    
+        </section>
+  </main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var THEME_KEY = 'apple-fpna-dashboard-theme';
+  try {
+    var saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'dark' || saved === 'light') root.setAttribute('data-theme', saved);
+  } catch (e) {}
+
+  function currentTheme() {
+    var attr = root.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateToggleLabel() {
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    var t = currentTheme();
+    btn.textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
+  }
+  var toggleBtn = document.getElementById('theme-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function () {
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      updateToggleLabel();
+    });
+    updateToggleLabel();
+  }
+
+  var navButtons = Array.prototype.slice.call(document.querySelectorAll('.nav-btn'));
+  var pages = Array.prototype.slice.call(document.querySelectorAll('.page'));
+
+  function showPage(id, pushHash) {
+    var found = false;
+    pages.forEach(function (sec) {
+      var match = sec.id === 'page-' + id;
+      sec.classList.toggle('active', match);
+      if (match) found = true;
+    });
+    if (!found && pages.length) { pages[0].classList.add('active'); id = pages[0].id.replace('page-', ''); }
+    navButtons.forEach(function (btn) {
+      var match = btn.getAttribute('data-page') === id;
+      if (match) { btn.setAttribute('aria-current', 'page'); }
+      else { btn.removeAttribute('aria-current'); }
+    });
+    var titleEl = document.querySelector('.nav-btn[data-page="' + id + '"] .nav-label');
+    if (titleEl) document.title = titleEl.textContent + ' — Apple FP&A Planning Dashboard';
+    if (pushHash) { history.replaceState(null, '', '#' + id); }
+    var content = document.querySelector('.content');
+    if (content) content.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
+  navButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () { showPage(btn.getAttribute('data-page'), true); });
+  });
+
+  var initial = (location.hash || '').replace('#', '');
+  var validIds = navButtons.map(function (b) { return b.getAttribute('data-page'); });
+  if (!initial || validIds.indexOf(initial) === -1) initial = validIds[0];
+  showPage(initial, false);
+
+  window.addEventListener('hashchange', function () {
+    var id = (location.hash || '').replace('#', '');
+    if (validIds.indexOf(id) !== -1) showPage(id, false);
+  });
+})();
+</script>
+</body>
+</html>
